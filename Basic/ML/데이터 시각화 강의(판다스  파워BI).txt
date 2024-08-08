@@ -1,0 +1,193 @@
+데이터 시각화 강의(판다스 / 파워BI)
+
+데이터시각화 판다스 동영상 강좌_01~10
+
+1. 판다스_01 파이썬 설치 
+
+https://youtu.be/VgQg9kllCZ8?si=k74iQ7oLs-clzolv
+
+2. 판다스_02 쥬피터 노트북 설치
+
+https://youtu.be/hJn-HD3MzI8?si=CkstqTol8HEuysGT
+
+3. 판다스_03 판다스 개요
+
+https://youtu.be/oC0Jq7FWV0w?si=EC9J9DW_ENJtLKh7
+
+4. 판다스_04 판다스 시리즈와 데이터프레임
+
+https://youtu.be/RAa8bJmfeN8?si=EmIbfzFsitbpwlJS
+
+5. 판다스_05 판다스 시리즈 
+
+https://youtu.be/0UtZqwU93Sc?si=CIp8i2PToukV4k3v
+
+6. 판다스_06 판다스 데이터프레임
+
+https://youtu.be/fUgoFSiQH8o?si=-HBKdpvp4WLOK-SP
+
+7.  판다스_07 subset observationRows
+
+https://youtu.be/75Tpve1TBZs?si=NUdOm5Q--NwIUn6Y
+
+8. 판다스_08 logic 연산
+
+https://youtu.be/hfqh8XBaj4M?si=sSeFNv69DTsWZ4xe
+
+9. 판다스_09 head, tail 데이터 미리보기
+
+https://youtu.be/geEwJ1i4bKs?si=oxmBBoN770AuHXeI
+
+10. 판다스_10 subset observationColumns
+
+https://youtu.be/5CpGxKSlqBA?si=XmvVYNzYhiN6ecFC
+
+--------------------------------------------------------------------
+
+데이터시각화 판다스 동영상 강좌_11 ~ 20
+
+11. 판다스_11 판다스로 기본통계하기
+
+https://youtu.be/QQueb2wvoYU?si=S509yoxXE4XZw41R
+
+12. 판다스_12 apply 함수
+
+https://youtu.be/KWPZJkY7QAU?si=ZHZEzmWOXEHFiz4w
+
+13. 판다스_13 Dropna, Fillna, Isnull, Nothull
+
+https://youtu.be/w3BhjzRoy2M?si=DNDiHuxFuCFu2_GJ
+
+14. 판다스_14 Assisn으로 새로운 컬럼 만들기
+
+https://youtu.be/nHrOnXuIG3g?si=Rsl5CA-vy2dVBIW8
+
+15. 판다스_15 Qcut으로 범주화하기
+
+https://youtu.be/I4vQtW7XVI4?si=6YrnFl_y4q1EdSwi
+
+16. Reshaping Data
+
+https://youtu.be/B3u8eTIfq80?si=3oSQVFFO4wFQEL9-
+
+17. 깔끔한 데이터 만들기Melt, Pivot
+
+https://youtu.be/7s09tCTqCP0?si=ZyH1kzRzlaNjkYEP
+
+18. 데이터 합치기
+
+https://youtu.be/5g8c95qN5PU?si=ARYDZBcIuEzvkfxB
+
+19. Merge로 데이터프레임 합치기
+
+https://youtu.be/dgjYpGBeQwU?si=oWhjlu7KdIQE7sFs
+
+20. SQL문 활용 데이터 집계
+
+https://youtu.be/luxyt6K3zUc?si=3Iq8RjbSh7rg528K
+
+------------------------------------------------------------------------
+
+데이터시각화 판다스 동영상 강좌_21 ~ 30
+
+21. 판다스 Expanding and Rolling 이해하기
+https://youtu.be/w_hAKWfSlNc?si=JLg_2OEJ3hrsdwtj
+
+
+22. 데이터 시각화 소개 
+https://youtu.be/GeLXzKAzYIA?si=8A98jDSYd5TVn7j-
+
+23. 막대그래프 
+https://youtu.be/h9lYR9qydjc?si=_F9SrlK1O99n-b7N
+
+24. 히스토그램과 도수분포표
+https://youtu.be/adeuu2z4cnI?si=ZuRL7dHk33jYBIll
+
+25. 차분 diff 구하고 히스토그램으로 표현하기
+https://youtu.be/_6deSiLkYak?si=i0flaNhot596lbGT
+
+26. 상자수염boxplot
+https://youtu.be/jE165iuPdx0?si=pxVUQrQAEj1t1sKS
+
+27. 그래프 격자 만들기Area Plot, Grid 옵션 활용
+https://youtu.be/BQMZ25OT93s?si=OOG-EbtCvUH5S-ze
+
+28.  Scatter Plot산점도 그리기
+https://youtu.be/vIHduUWgLL0?si=IVtk2hZMlCyk9mnK
+
+29. Hexbin Polt 그리기
+https://youtu.be/2XHtJOFm4a8?si=2Np6jgTxI5dQ07os
+
+30. 원그래프 (pie plot)
+https://youtu.be/ksHy66lAwUg?si=-WfeeO5gH5_lO1Mv
+
+-----------------------------------------------------------------------
+
+데이터시각화 판다스 동영상 강좌_31~43
+
+31. Scatter Matrix Plot 산점도 행렬
+https://youtu.be/-wNJMMi9lQc?si=-Pf3ItOiHvSwnu_A
+
+32. Kernal Density Estimate Plot 커널밀도함수
+https://youtu.be/7Kbn3CClUmo?si=6q94nyq1KYwOea8p
+
+33. 실데이터 실습1 서울 코로나 19 실데이터 수집
+https://youtu.be/W9daP-vOAFs?si=irS2TchTSkaXnQyO
+
+34. 실데이터 불러오기 및 탐색 
+https://youtu.be/2Z1hfuGPn-A?si=AO7PyaCOLkzQS17k
+
+35. 시각화 도구 불러오기 
+https://youtu.be/g1aSX6anBwY?si=2uQR-uYcl0T30VWX
+
+36. 확진일
+https://youtu.be/ATAZWWZFiPg?si=uSqubj-A0FtK-r19
+
+37. 모든 날짜를 행에 만들어 주기
+https://youtu.be/2_SLiyluqlM?si=hC7NPTIW6baBJEbN
+
+38. 누적 확진자 수 구하기 
+https://youtu.be/BmBqqnMKkV4?si=5zONRQ4YFLLlwD62
+
+39. 확진월과 요일 구하기
+https://youtu.be/rRx73MRJhaU?si=LLCbzpm-h8WOAmLb
+
+40. 거주지별 확진자 
+https://youtu.be/5F3IutiTXF8?si=-JzhWlEuabQ5-zmQ
+
+41. 접촉력 
+https://youtu.be/z0gK8-_a07A?si=C_0PECdVK8Q-ADeF
+
+42. 가장 많은 전파가 일어난 번호
+https://youtu.be/VUNFhUcNCOo?si=sbsr-HRNM7dO6MRq
+
+43. 퇴원현황
+https://youtu.be/0187K8EgvYU?si=7xj7SuaC9sIz2Nuk
+
+
+--------------------------------------------------------------------------
+
+KOCW AI 보안 데이터 리터러시 
+
+http://www.kocw.net/home/cview.do?cid=ee40c79db3d0bb06
+
+ADSP 1과목 - 3과목 요약 강의 
+
+1주차 ~ 4주차 까지 
+
+판다스 실습 강의 
+
+9주차 ~ 13주차까지 
+
+-------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+

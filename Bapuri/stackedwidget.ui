@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>StackedWidget</class>
+ <widget class="QStackedWidget" name="StackedWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1029</width>
+    <height>697</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>BapuriFNB</string>
+  </property>
+  <widget class="QWidget" name="page">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <widget class="QPushButton" name="homeButton1">
+      <property name="text">
+       <string>홈(사진)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="font">
+       <font/>
+      </property>
+      <property name="text">
+       <string> 바푸리애프앤비</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QToolButton" name="toolButton">
+        <property name="font">
+         <font/>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color:white; background-color:rgb(230,100,30);</string>
+        </property>
+        <property name="text">
+         <string>매입매출</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_2">
+        <property name="font">
+         <font/>
+        </property>
+        <property name="text">
+         <string>시장조사</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_3">
+        <property name="font">
+         <font/>
+        </property>
+        <property name="text">
+         <string>원가율</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_4">
+        <property name="font">
+         <font/>
+        </property>
+        <property name="text">
+         <string>발주서</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="page_2">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QPushButton" name="homeButton2">
+      <property name="text">
+       <string>홈(사진)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_3">
+      <property name="font">
+       <font/>
+      </property>
+      <property name="text">
+       <string> 매입매출 페이지</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="page_3">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <widget class="QPushButton" name="homeButton3">
+      <property name="text">
+       <string>홈(사진)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_4">
+      <property name="font">
+       <font/>
+      </property>
+      <property name="text">
+       <string> 시장조사 페이지</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignHCenter|Qt::AlignTop</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLineEdit" name="lineEdit">
+        <property name="minimumSize">
+         <size>
+          <width>800</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font/>
+        </property>
+        <property name="placeholderText">
+         <string>음식 이름</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="searchButton">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>80</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>검색</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="page_4">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
+    <item>
+     <widget class="QPushButton" name="homeButton4">
+      <property name="text">
+       <string>홈(사진)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_5">
+      <property name="font">
+       <font/>
+      </property>
+      <property name="text">
+       <string> 원가율 페이지</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="page_5">
+   <layout class="QVBoxLayout" name="verticalLayout_5">
+    <item>
+     <widget class="QPushButton" name="homeButton5">
+      <property name="text">
+       <string>홈(사진)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_6">
+      <property name="font">
+       <font/>
+      </property>
+      <property name="text">
+       <string> 발주서 페이지</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>toolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(1)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>81</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>377</x>
+     <y>119</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(2)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>180</x>
+     <y>59</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>376</x>
+     <y>131</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolButton_3</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(3)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>292</x>
+     <y>61</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>368</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolButton_4</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(4)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>391</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>144</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>homeButton1</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(0)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>28</x>
+     <y>13</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>219</x>
+     <y>24</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>homeButton2</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(0)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>26</x>
+     <y>13</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>308</x>
+     <y>22</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>homeButton3</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(0)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>29</x>
+     <y>14</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>309</x>
+     <y>23</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>homeButton4</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(0)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>29</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>325</x>
+     <y>18</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>homeButton5</sender>
+   <signal>clicked()</signal>
+   <receiver>StackedWidget</receiver>
+   <slot>setCurrentIndex(0)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>32</x>
+     <y>15</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>337</x>
+     <y>19</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
