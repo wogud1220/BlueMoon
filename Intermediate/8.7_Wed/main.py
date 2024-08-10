@@ -32,7 +32,7 @@ st.error('error')
 
 from PIL import Image
 
-image = Image.open('../Bapuri/banana.png')
+image = Image.open('../../Bapuri/banana.png')
 
 st.image(image, width=300, caption='Banana')
 

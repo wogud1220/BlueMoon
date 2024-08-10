@@ -1,4 +1,4 @@
-# 발주서 페이지 모듈화
+# 시장조사 완료(시장조사 파일 분리, 열에 시장조사 표시, 검색시 중복값 제거, 등등)
 from PyQt5 import QtCore, QtGui, QtWidgets
 from datetime import datetime
 import pandas as pd
@@ -10,13 +10,14 @@ from PyQt5.QtGui import QPixmap, QFont
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, PatternFill, Border, Side
 from PyQt5.QtCore import QDate, Qt
+from PyQt5.QtGui import QColor
 
 # 엑셀 파일 경로 설정
-data_path_purchase = './2024_식자재매입_test.xlsx'  # 매출매입 페이지: 매입표
-data_path_sales = './2024_식자재매출_test5.xlsx'  # 매출매입 페이지: 매출표
-data_path_cost_ratio = './2024_식자재매출_test.xlsx'  # 원가율 페이지: 원가율표
-data_path_total_purchase = './combined_totals.xlsx'  # 매출매입 페이지: 매입 총합 데이터
-data_path_company_total_purchase = './company_total_purchase.xlsx'
+data_path_purchase = '2024_식자재매입_test.xlsx'  # 매출매입 페이지: 매입표
+data_path_sales = '2024_식자재매출_test5.xlsx'  # 매출매입 페이지: 매출표
+data_path_cost_ratio = '2024_식자재매출_test5.xlsx'  # 원가율 페이지: 원가율표
+data_path_total_purchase = 'combined_totals.xlsx'  # 매출매입 페이지: 매입 총합 데이터
+data_path_company_total_purchase = 'company_total_purchase.xlsx'
 
 class ExcelTreeView(QtWidgets.QWidget):
     def __init__(self, filePath, label='매출'):
@@ -40,6 +41,11 @@ class ExcelTreeView(QtWidgets.QWidget):
         self.model = QtGui.QStandardItemModel()
         self.treeView.setModel(self.model)
 
+        # 열 크기 조정 모드를 설정
+        header = self.treeView.header()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        header.setStretchLastSection(True)
+
         buttonLayout = QHBoxLayout()
 
         self.btnSave = QPushButton('Save Changes', self)
@@ -51,44 +57,66 @@ class ExcelTreeView(QtWidgets.QWidget):
 
     def loadExcelData(self, filePath):
         try:
+            # Load the company data
             df_company = pd.read_excel(data_path_company_total_purchase)
-            df_company['일자'] = pd.to_datetime(df_company['일자'], format='%Y-%m-%d', errors='coerce')
+            df_company['일자'] = pd.to_datetime(df_company['일자'], format='%Y-%m-%d', errors='coerce').dt.date
             df_company = df_company.dropna(subset=['일자'])
 
+            # Load the main data
             self.df = pd.read_excel(filePath)
+
             monthly_data = self.df.iloc[0:12].copy()
             daily_data = self.df.iloc[12:].copy()
 
             # Convert '일자' column to datetime format, drop rows where conversion fails
-            daily_data['일자'] = pd.to_datetime(daily_data['일자'], format='%Y-%m-%d', errors='coerce')
+            daily_data['일자'] = pd.to_datetime(daily_data['일자'], format='%Y-%m-%d', errors='coerce').dt.date
             daily_data = daily_data.dropna(subset=['일자'])
 
             # Extract month from '일자'
-            daily_data['월'] = daily_data['일자'].dt.month
+            daily_data['월'] = pd.to_datetime(daily_data['일자']).dt.month
 
             self.model.clear()  # Clear the existing model data
 
-            self.model.setHorizontalHeaderLabels(daily_data.columns)
+            # '월' 열을 제외한 나머지 열 이름 추출
+            header_labels = [col for col in daily_data.columns if col != '월']
+            # 머리글 설정
+            self.model.setHorizontalHeaderLabels(header_labels)
+
+            current_date = pd.to_datetime('today').date()
+
             for month, day_group in daily_data.groupby('월'):
                 month_item = [QtGui.QStandardItem(str(cell)) for cell in monthly_data.iloc[int(month) - 1].fillna(0)]
                 self.model.appendRow(month_item)
+                month_item_ptr = self.model.indexFromItem(month_item[0])  # Get the QModelIndex for the month item
 
                 for day in day_group.itertuples(index=False):
-                    day_item = [QtGui.QStandardItem(str(cell)) for cell in day]
-                    month_item[0].appendRow(day_item)
+                    # 마지막 열을 제외한 나머지 셀 값으로 QStandardItem 객체 생성
+                    day_item = []
+                    for idx, cell in enumerate(day[:-1]):
+                        item = QtGui.QStandardItem(str(cell))
+                        if header_labels[idx] == '금액':
+                            item.setBackground(QtGui.QColor('skyblue'))
+                        elif header_labels[idx] != '비고':
+                            item.setEditable(False)
+                        day_item.append(item)
 
-                    company_day_data = df_company[df_company['일자'] == day[0]]
+                    month_item[0].appendRow(day_item)
+                    day_item_ptr = month_item[0].index().child(month_item[0].rowCount() - 1, 0)  # Get the QModelIndex for the day item
+
+                    # Expand the item if it matches the current date
+                    if day.일자 == current_date:
+                        self.treeView.expand(month_item_ptr)
+                        self.treeView.expand(day_item_ptr)
+                        self.treeView.scrollTo(day_item_ptr)
+                        self.treeView.setCurrentIndex(day_item_ptr)
+
+                    company_day_data = df_company[df_company['일자'] == day.일자]
                     for company in company_day_data.itertuples(index=False):
+                        company = company[1:2] + ('',) + company[3:]
                         row_items = [QtGui.QStandardItem(str(cell)) for cell in company]
                         day_item[0].appendRow(row_items)
         except Exception as e:
             print(f"Error loading Excel data: {e}")
-
-    def custom_to_datetime(self, date_str):
-        try:
-            return pd.to_datetime(date_str)
-        except (ValueError, TypeError):
-            return date_str
 
     def saveChanges(self):
         # Load data from model to DataFrame
@@ -118,43 +146,48 @@ class ExcelTreeView(QtWidgets.QWidget):
         df = pd.DataFrame(all_data, columns=self.df.columns)
         df['금액'] = pd.to_numeric(df['금액'], errors='coerce').fillna(0)
 
-        # Convert '일자' column to datetime format
-        df['일자'] = df['일자'].apply(self.custom_to_datetime)
-
         # Load purchase total data
-        purchase_df = pd.read_excel(data_path_total_purchase)
-        purchase_df['총금액'] = pd.to_numeric(purchase_df['총금액'], errors='coerce').fillna(0)
+        sales_df = pd.read_excel(self.filePath)
+
+        sales_df['매입액'] = pd.to_numeric(sales_df['매입액'], errors='coerce').fillna(0)
 
         # Calculate cost ratio
-        df['원가율'] = (purchase_df['총금액'] / df['금액'].values[:len(purchase_df)] * 100).fillna(0)
+        df['원가율'] = ((sales_df['매입액'] / df['금액'] * 100)).round(1).fillna(0)
+        df['매입액'] = sales_df['매입액']
 
         # Save to Excel
         df.to_excel(self.filePath, index=False)
 
-        #####
-        company_purchase_df = pd.read_excel(data_path_company_total_purchase)
+
         # 매출 데이터와 매입 데이터 병합
-        # df_purchases를 기준으로 df_sales를 병합, 매출액 열만 병합
+        company_purchase_df = pd.read_excel(data_path_company_total_purchase)
         df = df.iloc[12:]
-        df['일자'] = pd.to_datetime(df['일자'], errors='coerce')
+        df['일자'] = pd.to_datetime(df['일자'], format='%Y-%m-%d', errors='coerce')
+        if '금액' in company_purchase_df.columns:
+            company_purchase_df = company_purchase_df.drop(columns=['금액'])
+
+
         company_purchase_df = pd.merge(company_purchase_df, df[['일자', '금액']], on='일자', how='left')
 
+        # '금액' 열을 3번째 위치로 이동
+        cols = list(company_purchase_df.columns)
+        cols.insert(2, cols.pop(cols.index('금액')))
+        company_purchase_df = company_purchase_df[cols]
+
+        company_purchase_df['총금액'] = pd.to_numeric(company_purchase_df['총금액'], errors='coerce').fillna(0)
+
         # 원가율 계산 (매입액 / 매출액)
-        company_purchase_df['원가율'] = company_purchase_df['총금액'] / company_purchase_df['금액']
+        company_purchase_df['원가율'] = (company_purchase_df['총금액'] / company_purchase_df['금액'] * 100).round(1)
 
         # 매출값 열 제거
-        company_purchase_df = company_purchase_df.drop(columns=['금액'])
+        # company_purchase_df = company_purchase_df.drop(columns=['금액'])
 
         company_purchase_df.to_excel(data_path_company_total_purchase, index=False)
-
-        #####
 
         # Reload the updated data
         self.loadExcelData(self.filePath)
 
         QMessageBox.information(self, 'Success', 'Changes saved successfully!')
-
-
 
 class ExcelViewer(QWidget):
     def __init__(self, filePath, label, rightViewer):
@@ -194,14 +227,70 @@ class ExcelViewer(QWidget):
 
     def loadExcelData(self, filePath):
         self.df = pd.read_excel(filePath)
+
         if self.df is not None:
+            self.df['일자'] = pd.to_datetime(self.df['일자']).dt.strftime('%Y-%m-%d')
+
+            # Convert specific columns to integer if they are numeric
+            for column in self.df.columns:
+                if pd.api.types.is_numeric_dtype(self.df[column]):
+                    self.df[column] = self.df[column].fillna(0).astype(int)
+
             self.tableWidget.setRowCount(self.df.shape[0])
             self.tableWidget.setColumnCount(self.df.shape[1])
             self.tableWidget.setHorizontalHeaderLabels(self.df.columns)
 
             for i in range(self.df.shape[0]):
                 for j in range(self.df.shape[1]):
-                    self.tableWidget.setItem(i, j, QTableWidgetItem(str(self.df.iat[i, j])))
+                    item = QTableWidgetItem(str(self.df.iat[i, j]))
+                    if self.df.columns[j] in ['공급가액', '부가세']:
+                        item.setBackground(QColor(245, 245, 245))  # 옅은 회색
+                    self.tableWidget.setItem(i, j, item)
+
+            # Scroll to the bottom
+            self.tableWidget.scrollToBottom()
+            # Store the column widths
+            self.storeColumnWidths()
+            # Resize columns to contents
+            self.resizeColumns()
+
+    def storeColumnWidths(self):
+        self.columnWidths = [self.tableWidget.columnWidth(col) for col in range(self.tableWidget.columnCount())]
+
+    def restoreColumnWidths(self):
+        for col, width in enumerate(self.columnWidths):
+            self.tableWidget.setColumnWidth(col, width)
+
+    def resizeColumns(self):
+        # 특정 열의 너비를 고정값으로 설정 ('품목' 열을 예시로 사용)
+        column_index = self.df.columns.get_loc('품목') if '품목' in self.df.columns else None
+        if column_index is not None:
+            self.tableWidget.setColumnWidth(column_index, 150)  # '품목' 열의 너비를 150으로 고정
+
+        # 나머지 열의 크기를 내용에 맞게 자동 조정
+        for col in range(self.tableWidget.columnCount()):
+            if col != column_index:
+                self.tableWidget.resizeColumnToContents(col)
+
+    def addRow(self):
+        self.storeColumnWidths()  # Store current column widths before adding a row
+        currentRow = self.tableWidget.currentRow()
+        self.tableWidget.insertRow(currentRow + 1)
+        # Add empty QTableWidgetItem objects to the new row
+        for col in range(self.tableWidget.columnCount()):
+            self.tableWidget.setItem(currentRow + 1, col, QTableWidgetItem(""))
+        # Restore column widths after adding a row
+        self.restoreColumnWidths()
+
+    def removeRow(self):
+        self.storeColumnWidths()  # Store current column widths before removing a row
+        currentRow = self.tableWidget.currentRow()
+        if currentRow >= 0:
+            self.tableWidget.removeRow(currentRow)
+            # Restore column widths after removing a row
+            self.restoreColumnWidths()
+        else:
+            QMessageBox.warning(self, 'Warning', 'Please select a row to remove.')
 
     def saveChanges(self):
         new_data = []
@@ -224,7 +313,13 @@ class ExcelViewer(QWidget):
                 new_df[column] = new_df[column].astype(self.df[column].dtype)
 
         self.df = new_df
+
+        self.df['공급가액'] = self.df['단가'] * self.df['수량']
+        self.df['부가세'] = self.df.apply(lambda row: row['공급가액'] / 10 if row['부가세'] != 0 else 0, axis=1) # 부가세 계산: 부가세 값이 0이 아닌 경우 공급가액의 10%, 0인 경우 그대로 0
+
         self.df.to_excel(self.filePath, index=False)
+
+        self.loadExcelData(self.filePath)
 
         # Save monthly totals and daily data to another Excel file
         self.saveMonthlyAndDailyTotals()
@@ -261,12 +356,24 @@ class ExcelViewer(QWidget):
         # Create a DataFrame for combined data
         combined_df = pd.DataFrame(combined_data)
 
+        # Load the existing sales Excel file
+        sales_df = pd.read_excel(data_path_sales)
+
+        # Merge combined_df with df_sales on '일자' column
+        sales_df = sales_df.merge(combined_df, on='일자', how='left')
+
+        # Assign the '총금액' to '매입액' in df_sales
+        sales_df['매입액'] = sales_df['총금액']
+        sales_df.drop(columns=['총금액'], inplace=True)
+
         # Save combined totals to a new Excel file
+        sales_df.to_excel(data_path_sales, index=False)
         combined_df.to_excel(data_path_total_purchase, index=False)
 
     def saveGroupedByDateAndSupplier(self):
         # Ensure '일자' column is in datetime format
-        self.df['일자'] = pd.to_datetime(self.df['일자'])
+        #self.df['일자'] = pd.to_datetime(self.df['일자'])
+        self.df['일자'] = pd.to_datetime(self.df['일자'], format='%Y-%m-%d', errors='coerce').dt.date
 
         # Group by '일자' and '업체명' and sum the '금액'
         grouped_df = self.df.groupby(['일자', '업체명'], as_index=False)['금액'].sum()
@@ -278,21 +385,13 @@ class ExcelViewer(QWidget):
         # Save to a new Excel file
         grouped_df.to_excel(data_path_company_total_purchase, index=False)
 
-    def addRow(self):
-        rowPosition = self.tableWidget.rowCount()
-        self.tableWidget.insertRow(rowPosition)
-
-    def removeRow(self):
-        currentRow = self.tableWidget.currentRow()
-        if (currentRow >= 0):
-            self.tableWidget.removeRow(currentRow)
-        else:
-            QMessageBox.warning(self, 'Warning', 'Please select a row to remove.')
-
-
-class ReadOnlyExcelViewer(ExcelViewer):
+class ReadOnlyExcelViewer(QWidget):
     def __init__(self, filePath, label):
-        super().__init__(filePath, label, None)  # ReadOnlyExcelViewer는 rightViewer를 사용하지 않으므로 None 전달
+        super().__init__()
+        self.filePath = filePath
+        self.label = label
+        self.initUI()
+        self.loadExcelData(self.filePath)
 
     def initUI(self):
         self.layout = QVBoxLayout()
@@ -304,7 +403,47 @@ class ReadOnlyExcelViewer(ExcelViewer):
         self.layout.addWidget(self.labelWidget)
         self.layout.addWidget(self.tableWidget)
 
+        buttonLayout = QHBoxLayout()
+
+        self.btnShowMonthly = QPushButton('Show Monthly Data', self)
+        self.btnShowMonthly.clicked.connect(self.showMonthlyData)
+        buttonLayout.addWidget(self.btnShowMonthly)
+
+        self.btnShowDaily = QPushButton('Show Daily Data', self)
+        self.btnShowDaily.clicked.connect(self.showDailyData)
+        buttonLayout.addWidget(self.btnShowDaily)
+
+        self.layout.addLayout(buttonLayout)
         self.setLayout(self.layout)
+
+    def loadExcelData(self, filePath):
+        self.df = pd.read_excel(filePath)
+        self.df.iloc[:12, self.df.columns.get_loc('일자')] = self.df.iloc[:12, self.df.columns.get_loc('일자')].astype(str)
+        self.df.iloc[12:, self.df.columns.get_loc('일자')] = pd.to_datetime(self.df.iloc[12:, self.df.columns.get_loc('일자')], errors='coerce').dt.strftime('%Y-%m-%d')
+        self.showMonthlyData()  # 기본적으로 월별 데이터를 표시
+
+    def showMonthlyData(self):
+        monthly_df = self.df.iloc[:12]  # 첫 12행이 월별 데이터
+        self.displayData(monthly_df)
+
+    def showDailyData(self):
+        daily_df = self.df.iloc[12:]  # 13행부터가 일별 데이터
+        self.displayData(daily_df)
+
+    def displayData(self, data):
+        self.tableWidget.clearContents()
+        self.tableWidget.setRowCount(data.shape[0])
+        self.tableWidget.setColumnCount(data.shape[1])
+        self.tableWidget.setHorizontalHeaderLabels(data.columns)
+
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                item = QTableWidgetItem(str(data.iat[i, j]))
+                item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)  # 읽기 전용으로 설정
+                self.tableWidget.setItem(i, j, item)
+
+        # Scroll to the bottom
+        self.tableWidget.scrollToBottom()
 
     def saveChanges(self):
         pass
@@ -314,7 +453,6 @@ class ReadOnlyExcelViewer(ExcelViewer):
 
     def removeRow(self):
         pass
-
 
 class OrderFormViewer(QWidget):
     def __init__(self):
@@ -330,7 +468,6 @@ class OrderFormViewer(QWidget):
         self.fixed_amount_table.setColumnWidth(2, 50)
         self.fixed_amount_table.setColumnWidth(3, 70)
         self.fixed_amount_table.setColumnWidth(5, 50)
-
 
     def initUI(self):
         self.layout = QVBoxLayout()
@@ -353,12 +490,25 @@ class OrderFormViewer(QWidget):
         self.search_button = QPushButton("검색", self)
         self.search_button.setFixedSize(100, 40)
 
+
+
+        self.lunch = QLineEdit(self)
+        self.dinner = QLineEdit(self)
+        self.lunch.setPlaceholderText("중식 인원")
+        self.dinner.setPlaceholderText("석식 인원")
+        self.lunch.setStyleSheet("font-size: 15px;")
+        self.dinner.setStyleSheet("font-size: 15px;")
+
+
+
+
         self.lineEdit.setStyleSheet("font-size: 20px;")
         self.lineEdit.returnPressed.connect(self.search_in_order_table)
         self.search_button.clicked.connect(self.search_in_order_table)
 
         self.search_layout.addWidget(self.lineEdit)
         self.search_layout.addWidget(self.search_button)
+        
 
         self.topLayout = QHBoxLayout()
         self.topLayout.addWidget(self.homeButton, alignment=QtCore.Qt.AlignLeft)
@@ -373,7 +523,6 @@ class OrderFormViewer(QWidget):
         self.order_table = QTableWidget(self)
         self.order_table.setObjectName("order_table")
         self.order_table.itemDoubleClicked.connect(self.add_row_to_fixed_amount_table)
-        
 
         self.splitter.addWidget(self.fixed_amount_table)
         self.splitter.addWidget(self.order_table)
@@ -381,13 +530,8 @@ class OrderFormViewer(QWidget):
         # 초기 크기 설정: 좌측 테이블의 폭을 50 줄이고, 우측 테이블의 폭을 50 늘리기
         self.splitter.setSizes([self.width() - 50, self.width() + 50])
 
-
         self.export_button = QPushButton("엑셀로 내보내기", self)
         self.export_button.clicked.connect(self.export_to_excel)
-
-
-
-
 
         self.add_button = QPushButton("추가", self)
         self.add_button.clicked.connect(self.add_row_button)
@@ -397,6 +541,8 @@ class OrderFormViewer(QWidget):
         self.bottomLayout = QHBoxLayout()
         self.bottomLayout.addWidget(self.add_button, alignment=QtCore.Qt.AlignLeft)
         self.bottomLayout.addWidget(self.delete_button, alignment=QtCore.Qt.AlignLeft)
+        self.bottomLayout.addWidget(self.lunch, alignment=QtCore.Qt.AlignLeft)
+        self.bottomLayout.addWidget(self.dinner,alignment=QtCore.Qt.AlignLeft)
         self.bottomLayout.addStretch()
         self.bottomLayout.addWidget(self.export_button, alignment=QtCore.Qt.AlignRight)
 
@@ -405,40 +551,23 @@ class OrderFormViewer(QWidget):
         self.layout.addLayout(self.bottomLayout)
         self.setLayout(self.layout)
 
-
-
-    def sort_input(self):
-            current_date = datetime.strptime(QDate.currentDate().toString('yyyy-MM-dd'), '%Y-%m-%d')
-
-            def calculate_priority1(row_date):
-                if pd.isnull(row_date):
-                    return 0
-                date_diff = (current_date - row_date).days
-                if date_diff <= 0:
-                    return 0
-                elif date_diff <= 90:
-                    return 1
-                elif date_diff <= 180:
-                    return 2
-                elif date_diff <= 270:
-                    return 3
-                elif date_diff <= 365:
-                    return 4
-                else:
-                    return 5
-
-            # 슬라이스된 데이터 프레임을 명시적으로 복사본을 만듭니다.
-            self.filtered_df = self.filtered_df.copy()
-
-            self.filtered_df.loc[:, '우선순위1'] = pd.to_datetime(self.filtered_df['일자']).apply(calculate_priority1)
-
-            temp_df = self.filtered_df.groupby('우선순위1')['단가'].rank(method='min', ascending=True).astype(int)
-            self.filtered_df = self.filtered_df.assign(우선순위2=temp_df)
-
-            self.filtered_df = self.filtered_df.sort_values(by=['우선순위1', '우선순위2']).reset_index(drop=True)
-            self.filtered_df.drop(columns=['우선순위1', '우선순위2'], inplace=True)
-
     def load_fixed_amount_table(self):
+        # current_date = datetime.now().strftime("%y%m%d")
+        # file_name = f'./{current_date}_발주서.xlsx'
+
+        # if os.path.exists(file_name):
+        #     df = pd.read_excel(file_name)
+        #     if df.empty:
+        #         return
+        #     self.fixed_amount_table.setRowCount(df.shape[0])
+        #     self.fixed_amount_table.setColumnCount(df.shape[1])
+        #     self.fixed_amount_table.setHorizontalHeaderLabels(df.columns)
+        #     for row in range(df.shape[0]):
+        #         for col in range(df.shape[1]):
+        #             self.fixed_amount_table.setItem(row, col, QTableWidgetItem(str(df.iat[row, col])))
+        # else:
+        #     QMessageBox.information(self, '정보', '오늘 날짜의 발주서 파일이 존재하지 않습니다.')
+
         file_name = './고정금액.xlsx'  # 자동으로 불러올 파일 이름
         try:
             self.full_df = pd.read_excel(file_name)
@@ -459,6 +588,7 @@ class OrderFormViewer(QWidget):
         file_name = './2024_식자재매입_test.xlsx'  # 자동으로 불러올 파일 이름
         try:
             df = pd.read_excel(file_name)
+            df['일자'] = pd.to_datetime(df['일자'], errors='coerce').dt.date
             if df.empty:
                 return
             self.order_table.setRowCount(df.shape[0])
@@ -505,13 +635,14 @@ class OrderFormViewer(QWidget):
         self.fixed_amount_table.setCurrentCell(new_row_index, 0)
 
     def search_in_order_table(self):
+        self.load_order_table()
         search_text = self.lineEdit.text()
         search_text = search_text.lower().strip()
         if not search_text:
             for row in range(self.order_table.rowCount()):
                 self.order_table.setRowHidden(row, False)
             return
-
+        filtered_rows = []
         for row in range(self.order_table.rowCount()):
             match = False
             for col in range(self.order_table.columnCount()):
@@ -521,7 +652,49 @@ class OrderFormViewer(QWidget):
                     if search_text in item_text:
                         match = True
                         break
-            self.order_table.setRowHidden(row, not match)
+            if match:
+                filtered_rows.append(row)
+        if not filtered_rows:
+            QMessageBox.information(self, "검색 결과", "검색어와 일치하는 항목이 없습니다.")
+            return
+
+        # Create a list of dictionaries for filtered rows
+        filtered_data = []
+        for row in filtered_rows:
+            row_data = {}
+            for col in range(self.order_table.columnCount()):
+                item = self.order_table.item(row, col)
+                row_data[self.order_table.horizontalHeaderItem(col).text()] = item.text()
+            filtered_data.append(row_data)
+
+        # Convert the list of dictionaries to a DataFrame
+        self.filtered_df = pd.DataFrame(filtered_data)
+        self.sort_input2()
+        self.display_sorted_table()
+
+    def sort_input2(self):
+        self.filtered_df['일자'] = pd.to_datetime(self.filtered_df['일자'], errors='coerce')
+        
+        current_date = pd.to_datetime(QDate.currentDate().toString('yyyy-MM-dd'))
+        self.filtered_df['분기'] = (current_date - self.filtered_df['일자']).dt.days // 90
+        
+        # 분기별 데이터를 우선적으로 표시하고, 같은 분기 내에서는 단가 오름차순, 같은 단가 내에서는 최신 날짜 우선으로 정렬
+        self.filtered_df = self.filtered_df.sort_values(by=['분기', '단가', '일자'], ascending=[True, True, False]).drop_duplicates(subset=['품목', '단가', '업체명'], keep='first').reset_index(drop=True)
+
+    def display_sorted_table(self):
+        self.order_table.setRowCount(self.filtered_df.shape[0])
+        self.order_table.setColumnCount(self.filtered_df.shape[1])
+        self.order_table.setHorizontalHeaderLabels(self.filtered_df.columns)
+
+        for row in range(self.filtered_df.shape[0]):
+            for col in range(self.filtered_df.shape[1]):
+                item = QTableWidgetItem(str(self.filtered_df.iat[row, col]))
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # 셀을 편집 불가능하게 설정
+                self.order_table.setItem(row, col, item)
+        
+    # 첫 번째 셀에 커서 이동
+        if self.filtered_df.shape[0] > 0:
+            self.order_table.setCurrentCell(0, 0)
 
     def add_row_to_fixed_amount_table(self, item):
         row = item.row()
@@ -615,10 +788,28 @@ class OrderFormViewer(QWidget):
         total_row[full_data.columns.get_loc('비중율')] = '100.00%'
         full_data.loc[len(full_data)] = total_row
 
+
+        # 인풋 받기
+        lunch_value = self.lunch.text() or "0"
+        dinner_value = self.dinner.text() or "0"
+
         total_sales_row = [''] * cols
         total_sales_row[0] = '예상매출'
         total_sales_row[1] = '예상인원(중/석)'
+        # 이어붙이기
+        total_sales_row[2] = f"{int(lunch_value):,} 식" if lunch_value.isdigit() else "0 식"
+        total_sales_row[3] = f"{int(dinner_value):,} 식" if dinner_value.isdigit() else "0 식"
+
+       # 가격ㄱ 계산
+        total_sales = 5800 * (int(lunch_value) + int(dinner_value))
+        total_sales_row[4] = f"{total_sales:,}"
         full_data.loc[len(full_data) + 1] = total_sales_row
+        # 식수 총합
+        sum_row = [''] * cols
+        sum_value = int(lunch_value) + int(dinner_value)
+        sum_row[2] = f"{sum_value:,} 식"
+        full_data.loc[len(full_data) + 1] = sum_row
+
 
         file_name = f'./{current_date}_발주서.xlsx'
         full_data.to_excel(file_name, index=False)
@@ -692,10 +883,23 @@ class OrderFormViewer(QWidget):
         dark_blue_fill = PatternFill(start_color="6496be", end_color="6496be", fill_type="solid")
         last_row = len(full_data) + 1
 
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=last_row, column=col)
-            cell.fill = dark_blue_fill
-            cell.border = thin_border
+        # 예상 매출 진한 파랑
+        for row in range(last_row-1, last_row + 1):
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=row, column=col)
+                cell.fill = dark_blue_fill
+                cell.border = thin_border
+
+        # 예상 매출 파란 부분 merge
+        ws.merge_cells(start_row=last_row, start_column=3, end_row=last_row, end_column=4)
+
+        ws.merge_cells(start_row=last_row - 1, start_column=1, end_row=last_row, end_column=1)
+
+        ws.merge_cells(start_row=last_row - 1, start_column=2, end_row=last_row, end_column=2)
+
+        alignment = Alignment(horizontal='center', vertical='center')
+        ws.cell(row=last_row, column=3).alignment = alignment
+
 
         merge_ranges = ['C3:C5', 'D3:D5', 'E3:E5', 'F3:F5', 'A22:A24']
         for merge_range in merge_ranges:
@@ -751,8 +955,8 @@ class DualExcelViewer(QWidget):
         leftWidth = self.splitter.widget(0).width()
         rightWidth = self.splitter.widget(1).width()
 
-        leftFontSize = max(10, leftWidth // 10)
-        rightFontSize = max(10, rightWidth // 10)
+        leftFontSize = max(25, leftWidth // 25)
+        rightFontSize = max(25, rightWidth // 25)
 
         self.leftViewer.labelWidget.setFont(self.setFontSize(leftFontSize))
         self.rightViewer.labelWidget.setFont(self.setFontSize(rightFontSize))
@@ -766,12 +970,16 @@ class MarketResearchPage(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+
+        self.df = None
+        self.excel_data = None
+        self.not_filtered_df = pd.DataFrame()
         self.load_excel()
 
     def initUI(self):
-        self.not_filtered_df = pd.DataFrame()
-
         self.layout = QVBoxLayout()
+
+        self.topLayout = QHBoxLayout()
 
         self.homeButton = ClickableLabel(self)
         home_pixmap = QPixmap("./home.png")  # 이미지 파일 경로 설정
@@ -783,42 +991,48 @@ class MarketResearchPage(QtWidgets.QWidget):
         font = QtGui.QFont()
         font.setPointSize(25)
         self.label.setFont(font)
-
-        self.search_layout = QHBoxLayout()
-        self.lineEdit = QLineEdit(self)
-        self.lineEdit.setFixedSize(800, 50)
-        self.lineEdit.setPlaceholderText("음식 이름")
-        self.search_button = QPushButton("검색", self)
-        self.search_button.setFixedSize(100, 50)
-
-        self.lineEdit.setStyleSheet("font-size: 20px;")
-        self.lineEdit.returnPressed.connect(self.search_food)
-        self.search_button.clicked.connect(self.search_food)
-
-        self.search_layout.addWidget(self.lineEdit)
-        self.search_layout.addWidget(self.search_button)
-
-        self.topLayout = QHBoxLayout()
-        self.topLayout.addWidget(self.homeButton, alignment=QtCore.Qt.AlignLeft)
-        self.topLayout.addWidget(self.label, alignment=QtCore.Qt.AlignCenter)
-        self.topLayout.addItem(QSpacerItem(100, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        self.topLayout.addLayout(self.search_layout)
+        self.label.setAlignment(QtCore.Qt.AlignLeft)
 
         self.date_label = QLabel(self)
         current_date = QDate.currentDate().toString('yyyy-MM-dd')
         self.date_label.setText(current_date)
-        self.topLayout.addWidget(self.date_label, alignment=QtCore.Qt.AlignRight)
+        self.date_label.setAlignment(QtCore.Qt.AlignRight)
+
+        self.topLayout.addWidget(self.homeButton)
+        self.topLayout.addWidget(self.label)
+        self.topLayout.addWidget(self.date_label)
+
+        self.search_layout = QHBoxLayout()
+        self.lineEdit = QLineEdit(self)
+        self.lineEdit.setPlaceholderText("음식 이름")
+        self.lineEdit.setFixedHeight(60)  # 높이 조정
+        self.search_button = QPushButton("검색", self)
+        self.search_button.setFixedHeight(60)  # 높이 조정
+        self.search_button.setFixedWidth(150)  # 폭 조정
+
+        self.lineEdit.setStyleSheet("font-size: 20px;")
+        self.lineEdit.returnPressed.connect(lambda: (self.save_current_data_to_excel(), self.search_food()))
+        self.search_button.clicked.connect(lambda: (self.save_current_data_to_excel(), self.search_food()))
+
+        self.search_layout.addWidget(self.lineEdit)
+        self.search_layout.addWidget(self.search_button)
+
+        self.search_layout.setContentsMargins(0, 20, 0, 0)  # 위쪽 여백 추가
+        self.lineEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.search_button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
 
         self.table_widget = QTableWidget(self)
-        self.table_widget.setFixedHeight(400)
+        self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.button_layout = QHBoxLayout()
         self.add_button = QPushButton("추가", self)
         self.delete_button = QPushButton("삭제", self)
+        self.button_layout.addStretch()
         self.button_layout.addWidget(self.add_button)
         self.button_layout.addWidget(self.delete_button)
 
         self.layout.addLayout(self.topLayout)
+        self.layout.addLayout(self.search_layout)
         self.layout.addWidget(self.table_widget)
         self.layout.addLayout(self.button_layout)
 
@@ -831,26 +1045,83 @@ class MarketResearchPage(QtWidgets.QWidget):
         file_name = './매입.xlsx'
         try:
             self.excel_data = pd.read_excel(file_name, sheet_name=None)
-            self.df = self.excel_data['물품목록list']
-            self.display_data(self.df)
+            self.df_buy = self.excel_data['물품목록list']
         except Exception as e:
             QMessageBox.critical(self, 'Error', str(e))
+        self.df_buy['종류'] = '매입'
+
+        self.df_market = pd.read_excel('./시장조사.xlsx')
+        self.df_market['종류'] = '시장'
+
+        self.df_buy['일자'] = pd.to_datetime(self.df_buy['일자'], errors='coerce').dt.date
+        self.df_market['일자'] = pd.to_datetime(self.df_market['일자'], errors='coerce').dt.date
+
+        self.df = pd.concat([self.df_market, self.df_buy], ignore_index=True)
+
+        self.display_data(self.df)
 
     def display_data(self, df):
         self.table_widget.setRowCount(df.shape[0])
         self.table_widget.setColumnCount(df.shape[1])
         self.table_widget.setHorizontalHeaderLabels(df.columns)
 
+        astype_list = ['수량', '단가', '공급가액', '부가세', '금액']
+        for name in astype_list:
+            df[name] = pd.to_numeric(df[name], errors='coerce').fillna(0).astype(int)
+
         for row in range(df.shape[0]):
             for col in range(df.shape[1]):
-                self.table_widget.setItem(row, col, QTableWidgetItem(str(df.iat[row, col])))
+                item = QTableWidgetItem(str(df.iat[row, col]))
+                self.table_widget.setItem(row, col, item)
+
+        # Scroll to the bottom
+        self.table_widget.scrollToBottom()
+        # Store the column widths
+        self.storeColumnWidths()
+        # Resize columns to contents
+        self.resizeColumns()
+
+    def storeColumnWidths(self):
+        self.columnWidths = [self.table_widget.columnWidth(col) for col in range(self.table_widget.columnCount())]
+
+    def restoreColumnWidths(self):
+        for col, width in enumerate(self.columnWidths):
+            self.table_widget.setColumnWidth(col, width)
+
+    def resizeColumns(self):
+        # 특정 열의 너비를 고정값으로 설정 ('품목' 열을 예시로 사용)
+        column_index = self.df.columns.get_loc('품목') if '품목' in self.df.columns else None
+        if column_index is not None:
+            self.table_widget.setColumnWidth(column_index, 150)  # '품목' 열의 너비를 150으로 고정
+
+        # 나머지 열의 크기를 내용에 맞게 자동 조정
+        for col in range(self.table_widget.columnCount()):
+            if col != column_index:
+                self.table_widget.resizeColumnToContents(col)
 
     def search_food(self):
         user_input = self.lineEdit.text()
         if user_input and self.df is not None:
             self.filtered_df = self.df[self.df.apply(lambda row: row.astype(str).str.contains(user_input).any(), axis=1)]
+            self.not_filtered_df = self.df[
+                ~self.df.apply(lambda row: row.astype(str).str.contains(user_input).any(), axis=1)]
+
+            print(len(self.filtered_df))
+            print(len(self.not_filtered_df))
+
+            # 중복된 항목을 그룹화하여 일자가 가장 높은 행을 남기기
+            df_sorted = self.filtered_df.sort_values('일자', ascending=False)
+            df_unique = df_sorted.drop_duplicates(subset=['품목', '단가', '업체명'], keep='first') # 중복 제거됨
+            df_duplicates = self.filtered_df[~self.filtered_df.index.isin(df_unique.index)] # 중복 되었던 행 모음
+
+            # 데이터프레임 합치기
+            self.filtered_df = df_unique
+            self.not_filtered_df= pd.concat([self.not_filtered_df, df_duplicates], ignore_index=True)
+
+            print(len(self.filtered_df))
+            print(len(self.not_filtered_df))
+
             self.sort_input()
-            self.not_filtered_df = self.df[~self.df.apply(lambda row: row.astype(str).str.contains(user_input).any(), axis=1)]
             self.display_data(self.filtered_df)
         if user_input == '':
             self.filtered_df = self.df
@@ -889,6 +1160,8 @@ class MarketResearchPage(QtWidgets.QWidget):
         self.filtered_df.drop(columns=['우선순위1', '우선순위2'], inplace=True)
 
     def delete_selected_row(self):
+        self.storeColumnWidths()
+
         current_row = self.table_widget.currentRow()
         if current_row >= 0:
             reply = QMessageBox.question(self, '삭제 확인', '정말로 삭제하시겠습니까?',
@@ -896,12 +1169,31 @@ class MarketResearchPage(QtWidgets.QWidget):
             if reply == QMessageBox.Yes:
                 self.table_widget.removeRow(current_row)
 
+        self.restoreColumnWidths()
+
     def add_new_row(self):
-        row_position = self.table_widget.rowCount()
+        self.storeColumnWidths()
+
+        current_row = self.table_widget.currentRow()
+        row_position = current_row + 1
         self.table_widget.insertRow(row_position)
+
+        # '종류' 열의 위치를 찾습니다.
+        column_index = 9
+
+        # 새 행의 '종류' 열에 '시장'을 추가합니다.
+        self.table_widget.setItem(row_position, column_index, QTableWidgetItem("시장"))
+
+        # 나머지 열에 빈 항목을 추가합니다.
+        for col in range(self.table_widget.columnCount()):
+            if col != column_index:  # '종류' 열이 아닌 경우
+                self.table_widget.setItem(row_position, col, QTableWidgetItem(""))
+
+        self.restoreColumnWidths()
 
     def save_current_data_to_excel(self):
         file_name = './매입.xlsx'
+        file_name_market = './시장조사.xlsx'
         rows = self.table_widget.rowCount()
         cols = self.table_widget.columnCount()
         data = []
@@ -919,11 +1211,21 @@ class MarketResearchPage(QtWidgets.QWidget):
         df = pd.DataFrame(data, columns=[self.table_widget.horizontalHeaderItem(i).text() for i in range(cols)])
         combined_df = pd.concat([df, self.not_filtered_df])
         self.df = combined_df
-        self.excel_data['물품목록list'] = combined_df
+
+        # 분리
+        # '종류' 열이 '시장'인 행만 추출
+        self.df_buy = self.df[self.df['종류'] == '매입'].drop(columns=['종류'])
+        self.df_market = self.df[self.df['종류'] == '시장'].drop(columns=['종류'])
+
+        self.df_buy['일자'] = pd.to_datetime(self.df_buy['일자'], errors='coerce').dt.date
+        self.df_market['일자'] = pd.to_datetime(self.df_market['일자'], errors='coerce').dt.date
+
+        self.excel_data['물품목록list'] = self.df_buy
         with pd.ExcelWriter(file_name) as writer:
             for sheet_name, sheet_df in self.excel_data.items():
                 sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+        self.df_market.to_excel(file_name_market, index=False)
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.pyqtSignal()
@@ -977,13 +1279,20 @@ class Ui_StackedWidget(object):
         # self.toolButton_3.setObjectName("toolButton_4")
         # self.toolButton_3.setText("발주서")
 
-        self.toolButton = self.createImageButton(self.page, "./apple.png", "매입매출", lambda: StackedWidget.setCurrentIndex(1), 'white', text_margin=(0, 30, 0, 0))
-        self.toolButton_2 = self.createImageButton(self.page, "./eggplant.png", "원가율", lambda: StackedWidget.setCurrentIndex(2), 'white', text_margin=(0, 50, -20, 0))
-        self.toolButton_3 = self.createImageButton(self.page, "./banana.png", "발주서", lambda: StackedWidget.setCurrentIndex(3), 'black', text_margin=(0, 60, 0, 0))
-        self.toolButton_4 = self.createImageButton(self.page, "./carrot.png", "시장조사", lambda: StackedWidget.setCurrentIndex(4), 'white', text_margin=(0, 40, -40, 0))
+        self.toolButton = self.createImageButton(self.page, "./apple.png", "매입매출",
+                                                 lambda: StackedWidget.setCurrentIndex(1), 'white',
+                                                 text_margin=(0, 30, 0, 0))
+        self.toolButton_2 = self.createImageButton(self.page, "./eggplant.png", "원가율",
+                                                   lambda: StackedWidget.setCurrentIndex(2), 'white',
+                                                   text_margin=(0, 50, -20, 0))
+        self.toolButton_3 = self.createImageButton(self.page, "./banana.png", "발주서",
+                                                   lambda: StackedWidget.setCurrentIndex(3), 'black',
+                                                   text_margin=(0, 60, 0, 0))
+        self.toolButton_4 = self.createImageButton(self.page, "./carrot.png", "시장조사",
+                                                   lambda: StackedWidget.setCurrentIndex(4), 'white',
+                                                   text_margin=(0, 40, -40, 0))
 
-
-        #self, parent, imagePath, text, clickHandler, text_color, text_margin=(0, 30, 0, 0)
+        # self, parent, imagePath, text, clickHandler, text_color, text_margin=(0, 30, 0, 0)
         self.pageLayout = QtWidgets.QVBoxLayout(self.page)
         self.pageLayout.addWidget(self.homeButton1, alignment=QtCore.Qt.AlignLeft)
         self.pageLayout.addWidget(self.imageLabel, alignment=QtCore.Qt.AlignCenter)
@@ -1010,12 +1319,12 @@ class Ui_StackedWidget(object):
         self.toolButton_3.clicked.connect(lambda: StackedWidget.setCurrentIndex(3))
         self.toolButton_4.clicked.connect(lambda: StackedWidget.setCurrentIndex(4))
 
-
     def createImageButton(self, parent, imagePath, text, clickHandler, text_color, text_margin=(0, 30, 0, 0)):
         label = ClickableLabel(parent)
         pixmap = QPixmap(imagePath)
         pixmap = pixmap.scaled(180, 180, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         label.setPixmap(pixmap)
+        
         label.setAlignment(QtCore.Qt.AlignCenter)
 
         layout = QVBoxLayout(label)
@@ -1024,25 +1333,23 @@ class Ui_StackedWidget(object):
         textLabel.setAlignment(QtCore.Qt.AlignCenter)
         textLabel.setFont(QFont('Arial', 30))
         textLabel.setStyleSheet(f"color: {text_color};")
+        textLabel.setStyleSheet("font-weight: bold;")
         layout.addWidget(textLabel)
 
         label.clicked.connect(clickHandler)
         return label
-
-
 
     def setupMarketResearchPage(self, StackedWidget):
         self.page_3 = QtWidgets.QWidget()
         self.page_3.setObjectName("page_3")
 
         self.market_research_page = MarketResearchPage()
-        self.market_research_page.homeButton.clicked.connect(lambda: StackedWidget.setCurrentIndex(0))
+        self.market_research_page.homeButton.clicked.connect(lambda: (self.market_research_page.save_current_data_to_excel(), StackedWidget.setCurrentIndex(0)))
 
         self.page3Layout = QVBoxLayout(self.page_3)
         self.page3Layout.addWidget(self.market_research_page)
 
         StackedWidget.addWidget(self.page_3)
-
 
     def setupPurchaseSalePage(self, StackedWidget):
         self.page_2 = QtWidgets.QWidget()
