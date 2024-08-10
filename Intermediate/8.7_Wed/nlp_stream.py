@@ -64,27 +64,79 @@ def main():
     st.title(title)
     st.markdown(subheader, unsafe_allow_html=True)
     st.sidebar.title('NLP project')
-    menu = st.sidebar.selectbox('Menu', ['Text Analyse', 'Emotion Analyse'])
+    menu = st.sidebar.selectbox('Menu', ['Text Analyse', 'Emotion Analyse', '번역', '이 프로젝트에 대하여'])
 
 
 
     if menu == 'Text Analyse':
-        title = menu
+        raw_text = st.text_area("Text Input", "여기에 영어 텍스트를 입력하세요", height =  300)
+
+        # 버튼을 누르면 분석을 실행하도록 함
+        if st.button('Start'):
+            if len(raw_text) == 0:
+                st.warning('텍스트가 입력되지 않음.')
+            else:
+                col1, col2 = st.columns(2)
+                with col1:
+                # 내가 입력한 자연어에 대한 기본적인 분석 정보
+                # 누르면 나오는
+                    with st.expander('Basic Info for NLP'):
+                        word_desc = nt.TextFrame(raw_text).word_stats()
+                        result_desc = {'len of text :', word_desc['Length of Text'],
+                                    "Num of Vowels :", word_desc['Num of Vowels'],
+                                    "Num of Stopwords :", word_desc['Num of Stopwords']}
+                        st.write(result_desc)
+
+                with col2:
+                    with st.expander('preprocessedtext'):
+                        # 불용어 제거
+                        processed_text = str(nt.TextFrame(raw_text).remove_stopwords())
+                        # 정제된 텍스트를 표기
+                        st.write(processed_text)
+
+
     elif menu == 'Emotion Analyse':
-        title = menu
+        st.subheader('감성분석')
+        raw_text = st.text_area("Text Input", "여기에 영어 텍스트를 입력하세요", height =  300)
 
+        # 버튼을 누르면 분석을 실행하도록 함
+        if st.button('Start'):
+            if len(raw_text) == 0:
+                st.warning('텍스트가 입력되지 않음.')
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write('Hi')
-
-    with col2:
-        st.write('Bye')
+            else:
+                blob = TextBlob(raw_text)
+                result = blob.sentiment
+                st.success(result)
     
+    
+    elif menu == '번역':
+        raw_text = st.text_area('Text INput', '여기에 텍스트를 입력', height=300)
+
+        if len(raw_text) < 3:
+            st.warning('텍스트가 너무 짧습니다.')
+
+        else:
+            target_language = st.selectbox('번역할 언어를 선택', ['German', 'Spanish', 'French', 'Italian'])
+            if target_language == 'German':
+                target_lang = 'de'
+            elif target_language == 'Spanish':
+                target_lang = 'es'
+            elif target_language == 'French':
+                target_lang = 'fr'
+            else :
+                target_lang = 'it'
+        
+
+            if st.button('번역 시작'):
+                translator = GoogleTranslator(source =
+                'auto', target = target_lang)
+                translated_text = translator.translate(raw_text)
+                st.write(translated_text)
 
 
 
-    return
+        return
 
 
 if __name__ == "__main__":
